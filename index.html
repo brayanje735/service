@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Ventas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1, h2, h3 {
+            text-align: center;
+            color: #333;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .product-list, .user-list, .coupon-list, .sales-list, .cart-list {
+            margin-top: 20px;
+        }
+        .product-item, .coupon-item, .user-item, .sale-item, .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .product-item button, .coupon-item button, .user-item button, .cart-item button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .product-item button:hover, .coupon-item button:hover, .user-item button:hover, .cart-item button:hover {
+            background-color: #d32f2f;
+        }
+        .admin-container, .employee-container, #ticket {
+            display: none;
+        }
+        .logout-btn {
+            background-color: #f44336;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .logout-btn:hover {
+            background-color: #d32f2f;
+        }
+        .cart-details, .ticket-details {
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Login -->
+    <div id="loginContainer">
+        <h2>Inicio de Sesión</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Usuario" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button type="submit">Ingresar</button>
+            <p id="loginError" style="color: red;"></p>
+        </form>
+    </div>
+
+    <!-- Panel de Administrador -->
+    <div class="admin-container" id="adminContainer">
+        <h2>Panel de Administrador</h2>
+        <button onclick="showProductForm()">Crear Producto</button>
+        <button onclick="showCouponForm()">Crear Cupón</button>
+        <button onclick="showUserForm()">Crear Usuario</button>
+        <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+        
+        <h3>Logo de la Tienda</h3>
+        <input type="file" id="storeLogo" accept="image/*" onchange="setStoreLogo()">
+        
+        <h3>Lista de Productos</h3>
+        <div id="productList" class="product-list"></div>
+
+        <h3>Lista de Cupones</h3>
+        <div id="couponList" class="coupon-list"></div>
+
+        <h3>Lista de Usuarios</h3>
+        <div id="userList" class="user-list"></div>
+
+        <h3>Ventas Realizadas</h3>
+        <div id="salesList" class="sales-list"></div>
+    </div>
+
+    <!-- Panel de Empleado -->
+    <div class="employee-container" id="employeeContainer">
+        <h2>Panel de Empleado</h2>
+        <h3>Productos Disponibles</h3>
+        <div id="availableProducts" class="product-list"></div>
+
+        <button onclick="showCart()">Ver Carrito</button>
+        <button onclick="registerPurchase()">Registrar Compra</button>
+        <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+
+        <h3>Carrito de Compras</h3>
+        <div id="cartDetails" class="cart-details"></div>
+        <h3>Total: $<span id="totalAmount">0</span></h3>
+
+        <!-- Método de Pago -->
+        <div id="paymentMethodSection">
+            <h3>Seleccionar Método de Pago</h3>
+            <select id="paymentMethod">
+                <option value="efectivo">Efectivo</option>
+                <option value="tarjeta">Tarjeta</option>
+                <option value="otro">Otro</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Formulario de Crear Producto -->
+    <div id="productForm" style="display: none;">
+        <h3>Crear Producto</h3>
+        <input type="text" id="productName" placeholder="Nombre del Producto" required>
+        <input type="number" id="productPrice" placeholder="Precio" required>
+        <input type="number" id="productStock" placeholder="Cantidad en Stock" required>
+        <button onclick="createProduct()">Crear Producto</button>
+        <button onclick="cancelProductForm()">Cancelar</button>
+    </div>
+
+    <!-- Formulario de Crear Cupón -->
+    <div id="couponForm" style="display: none;">
+        <h3>Crear Cupón</h3>
+        <input type="text" id="couponCode" placeholder="Código de Cupón" required>
+        <input type="number" id="couponDiscount" placeholder="Descuento" required>
+        <button onclick="createCoupon()">Crear Cupón</button>
+        <button onclick="cancelCouponForm()">Cancelar</button>
+    </div>
+
+    <!-- Formulario de Crear Usuario -->
+    <div id="userForm" style="display: none;">
+        <h3>Crear Usuario</h3>
+        <input type="text" id="newUsername" placeholder="Nombre de Usuario" required>
+        <input type="password" id="newPassword" placeholder="Contraseña" required>
+        <select id="userRole">
+            <option value="admin">Administrador</option>
+            <option value="empleado">Empleado</option>
+        </select>
+        <button onclick="createUser()">Crear Usuario</button>
+        <button onclick="cancelUserForm()">Cancelar</button>
+    </div>
+
+    <!-- Ticket de Compra -->
+    <div id="ticket">
+        <h2>Ticket de Compra</h2>
+        <div id="ticketDetails"></div>
+        <button onclick="printTicket()">Imprimir Ticket</button>
+    </div>
+</div>
+
+<script>
+    // Datos iniciales
+    const users = [
+        { username: "admin", password: "admin", role: "admin" },
+        { username: "empleado1", password: "empleado1", role: "empleado" }
+    ];
+
+    const products = [];
+    const coupons = [];
+    const sales = [];
+    let cart = [];
+    let currentUserRole = '';
+    let currentUserName = '';
+    let paymentMethod = ''; // Método de pago
+
+    // Función de inicio de sesión
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        const user = users.find(user => user.username === username && user.password === password);
+
+        if (user) {
+            currentUserName = username;
+            currentUserRole = user.role;
+            document.getElementById("loginContainer").style.display = "none";
+
+            if (user.role === "admin") {
+                document.getElementById("adminContainer").style.display = "block";
+                renderAdminPanel();
+            } else if (user.role === "empleado") {
+                document.getElementById("employeeContainer").style.display = "block";
+                renderEmployeePanel();
+            }
+        } else {
+            document.getElementById("loginError").innerText = "Usuario o contraseña incorrectos.";
+        }
+    });
+
+    function logout() {
+        currentUserName = '';
+        currentUserRole = '';
+        cart = [];
+        renderCart();
+        document.getElementById("adminContainer").style.display = "none";
+        document.getElementById("employeeContainer").style.display = "none";
+        document.getElementById("loginContainer").style.display = "block";
+        document.getElementById("ticket").style.display = "none";
+    }
+
+    // Funciones del Administrador
+    function renderAdminPanel() {
+        renderProducts();
+        renderCoupons();
+        renderUsers();
+        renderSales();
+    }
+
+    function renderProducts() {
+        const productList = document.getElementById("productList");
+        productList.innerHTML = "";
+        products.forEach((product, index) => {
+            const productItem = document.createElement("div");
+            productItem.classList.add("product-item");
+            productItem.innerHTML = `
+                <span>${product.name} - $${product.price} - ${product.stock} disponibles</span>
+                <button onclick="deleteProduct(${index})">Eliminar</button>
+            `;
+            productList.appendChild(productItem);
+        });
+    }
+
+    function renderCoupons() {
+        const couponList = document.getElementById("couponList");
+        couponList.innerHTML = "";
+        coupons.forEach((coupon, index) => {
+            const couponItem = document.createElement("div");
+            couponItem.classList.add("coupon-item");
+            couponItem.innerHTML = `
+                <span>${coupon.code} - Descuento: ${coupon.discount}%</span>
+                <button onclick="deleteCoupon(${index})">Eliminar</button>
+            `;
+            couponList.appendChild(couponItem);
+        });
+    }
+
+    function renderUsers() {
+        const userList = document.getElementById("userList");
+        userList.innerHTML = "";
+        users.forEach((user, index) => {
+            const userItem = document.createElement("div");
+            userItem.classList.add("user-item");
+            userItem.innerHTML = `
+                <span>${user.username} - ${user.role}</span>
+                <button onclick="deleteUser(${index})">Eliminar</button>
+            `;
+            userList.appendChild(userItem);
+        });
+    }
+
+    function renderSales() {
+        const salesList = document.getElementById("salesList");
+        salesList.innerHTML = "";
+        sales.forEach((sale, index) => {
+            const saleItem = document.createElement("div");
+            saleItem.classList.add("sale-item");
+            saleItem.innerHTML = `
+                <span>Venta por ${sale.user} - Total: $${sale.total}</span>
+            `;
+            salesList.appendChild(saleItem);
+        });
+    }
+
+    // Funciones de Productos
+    function createProduct() {
+        const name = document.getElementById("productName").value;
+        const price = parseFloat(document.getElementById("productPrice").value);
+        const stock = parseInt(document.getElementById("productStock").value);
+
+        if (name && price && stock) {
+            products.push({ name, price, stock });
+            renderProducts();
+            cancelProductForm();
+        }
+    }
+
+    function deleteProduct(index) {
+        products.splice(index, 1);
+        renderProducts();
+    }
+
+    // Funciones de Cupones
+    function createCoupon() {
+        const code = document.getElementById("couponCode").value;
+        const discount = parseInt(document.getElementById("couponDiscount").value);
+
+        if (code && discount) {
+            coupons.push({ code, discount });
+            renderCoupons();
+            cancelCouponForm();
+        }
+    }
+
+    function deleteCoupon(index) {
+        coupons.splice(index, 1);
+        renderCoupons();
+    }
+
+    // Funciones de Usuarios
+    function createUser() {
+        const username = document.getElementById("newUsername").value;
+        const password = document.getElementById("newPassword").value;
+        const role = document.getElementById("userRole").value;
+
+        if (username && password) {
+            users.push({ username, password, role });
+            renderUsers();
+            cancelUserForm();
+        }
+    }
+
+    function deleteUser(index) {
+        users.splice(index, 1);
+        renderUsers();
+    }
+
+    // Funciones del Empleado
+    function renderEmployeePanel() {
+        renderAvailableProducts();
+    }
+
+    function renderAvailableProducts() {
+        const availableProducts = document.getElementById("availableProducts");
+        availableProducts.innerHTML = '';
+        products.forEach(product => {
+            const productItem = document.createElement("div");
+            productItem.classList.add("product-item");
+            productItem.innerHTML = `
+                <span>${product.name} - $${product.price} - ${product.stock} disponibles</span>
+                <button onclick="addToCart('${product.name}')">Agregar al carrito</button>
+            `;
+            availableProducts.appendChild(productItem);
+        });
+    }
+
+    function addToCart(productName) {
+        const product = products.find(p => p.name === productName);
+        if (product && product.stock > 0) {
+            cart.push(product);
+            product.stock--;
+            renderCart();
+            renderAvailableProducts();
+        }
+    }
+
+    function removeFromCart(productName) {
+        const productIndex = cart.findIndex(p => p.name === productName);
+        if (productIndex !== -1) {
+            const product = cart[productIndex];
+            product.stock++;
+            cart.splice(productIndex, 1);
+            renderCart();
+            renderAvailableProducts();
+        }
+    }
+
+    function renderCart() {
+        const cartDetails = document.getElementById("cartDetails");
+        cartDetails.innerHTML = "";
+        let total = 0;
+
+        cart.forEach(item => {
+            const cartItem = document.createElement("div");
+            cartItem.classList.add("cart-item");
+            cartItem.innerHTML = `
+                <span>${item.name} - $${item.price}</span>
+                <button onclick="removeFromCart('${item.name}')">Eliminar</button>
+            `;
+            cartDetails.appendChild(cartItem);
+            total += item.price;
+        });
+
+        document.getElementById("totalAmount").innerText = total;
+    }
+
+    function showCart() {
+        renderCart();
+    }
+
+    function registerPurchase() {
+        if (cart.length === 0) {
+            alert("El carrito está vacío. No se puede registrar la compra.");
+            return;
+        }
+
+        paymentMethod = document.getElementById("paymentMethod").value;
+
+        const totalAmount = cart.reduce((total, item) => total + item.price, 0);
+        const sale = {
+            user: currentUserName,
+            products: [...cart],
+            total: totalAmount,
+            paymentMethod: paymentMethod
+        };
+        sales.push(sale);
+
+        // Mostrar ticket
+        document.getElementById("ticketDetails").innerHTML = `
+            <h3>Compra Realizada por ${sale.user}</h3>
+            <h4>Productos:</h4>
+            <ul>
+                ${sale.products.map(product => `<li>${product.name} - $${product.price}</li>`).join('')}
+            </ul>
+            <h4>Total: $${sale.total}</h4>
+            <h4>Método de Pago: ${sale.paymentMethod}</h4>
+        `;
+        document.getElementById("ticket").style.display = "block";
+
+        // Limpiar carrito
+        cart = [];
+        renderCart();
+    }
+
+    function printTicket() {
+        const ticketContent = document.getElementById("ticket").innerHTML;
+        const printWindow = window.open('', '', 'height=500, width=500');
+        printWindow.document.write('<html><body>');
+        printWindow.document.write(ticketContent);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+    }
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
